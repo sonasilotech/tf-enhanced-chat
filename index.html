@@ -24,6 +24,61 @@
 		}
 	};
 </script>
+<script>
+     function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+function getGA4Data() {  
+      // 1. Extract Client ID (cid) Format: GA1.1.1396225578.1734272183 -> We need "1396225578.1734272183"
+      const gaCookie = getCookie('_ga');
+      let clientId = null;
+      
+      if (gaCookie) {
+        // Split by dot and take the last two parts
+        const parts = gaCookie.split('.');
+        if (parts.length >= 2) {
+          clientId = parts.slice(-2).join('.');
+        }
+      }
+    
+      // 2. Extract Session ID (sid) 
+      // Format: GS1.1.1734272182.1.1... -> We need "1734272182" (the 3rd part)
+      // We need to find the cookie that starts with "_ga_EYFLELGKGE"( enter the corresponding container ID )
+      let sessionId = null;
+      const allCookies = document.cookie.split('; ');
+      const sessionCookie = allCookies.find(row => row.startsWith(' _ga_EYFLELGKGE')); 
+      
+      if (sessionCookie) {
+        const cookieValue = sessionCookie.split('=')[1];
+        
+        // Split the value by '.' the Session ID is the 3rd element (index 2)
+        const parts = cookieValue.split('.');
+        if (parts.length > 2) {
+          sessionId = parts[2];
+        }
+      }
+    
+      return {
+        client_id: clientId,
+        session_id: sessionId
+      };
+}
+window.addEventListener('message', (event) => {
+    console.log('called', event.data);
+    if(event.data.event === 'chatIFrameReady') {
+        const gaData = getGA4Data();
+        console.log("Client ID:", gaData.client_id);
+        console.log("Session ID:", gaData.session_id);
+        document.querySelector('#embeddedMessagingFrame').contentWindow.postMessage({'event':'GA4Data', 'client_id': gaData.client_id, 'session_id': gaData.session_id}, '*');
+        console.log('success');
+    }
+    
+});
+</script>
 <script type='text/javascript' src='https://usaf--afuat.sandbox.experience.crmforce.mil/ESWTFEnhancedChatInter1763760132768/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
 <h1>TF Enhanced Chat Testing - AFUAT</h1>
 <button onclick="window.open('secondpage.html', '_blank');" id="myButton" class="float-left submit-button" >Second Page</button>
